@@ -14,6 +14,9 @@ export class User {
     @Column()
     age: number;
 
-    @Column()
+    @Column({ nullable: true, unique: true })
     email: string;
+
+    @Column({ nullable: true })
+    password: string;
 } 
