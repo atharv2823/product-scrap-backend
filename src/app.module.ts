@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { ProductSearchModule } from './product-search/product-search.module';
 import { ProductModule } from './product/product.module';
 import { ScraperModule } from './scraper/scraper.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { ScraperModule } from './scraper/scraper.module';
     ProductSearchModule,
     ProductModule,
     ScraperModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
