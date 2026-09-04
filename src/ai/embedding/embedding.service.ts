@@ -1,16 +1,19 @@
-// src/ai/embedding.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { OpenAIEmbeddings } from '@langchain/openai';
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 @Injectable()
 export class EmbeddingService {
-    private embeddings: OpenAIEmbeddings;
+    private embeddings: GoogleGenerativeAIEmbeddings;
 
     constructor(private configService: ConfigService) {
-        this.embeddings = new OpenAIEmbeddings({
-            model: 'text-embedding-3-small', // 1536 dimensions
-            apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+        const apiKey =
+            this.configService.get<string>('GEMINI_API_KEY') ||
+            this.configService.get<string>('OPENAI_API_KEY');
+
+        this.embeddings = new GoogleGenerativeAIEmbeddings({
+            model: 'gemini-embedding-001', // 3072 dimensions
+            apiKey: apiKey,
         });
     }
 

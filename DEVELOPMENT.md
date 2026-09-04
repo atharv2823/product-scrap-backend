@@ -12,7 +12,7 @@ This project is an enterprise-grade backend service built with **NestJS**, **Sup
 1. **Accepts image uploads** from users to identify products visually.
 2. **Scrapes e-commerce platforms concurrently** (Amazon India, Flipkart, Ajio) using headless scrapers and Firecrawl.
 3. **Extracts structured product data** (title, price, MRP, rating, links, images) with zero-hallucination guarantees using **LangChain's Structured Output** (`withStructuredOutput` + Zod).
-4. **Generates vector embeddings** (1536-dimensional) and stores catalog items in **Supabase PostgreSQL with `pgvector`**.
+4. **Generates vector embeddings** (768-dimensional) and stores catalog items in **Supabase PostgreSQL with `pgvector`**.
 5. **Powers a Conversational RAG Chatbot** that retrieves the most relevant products via cosine similarity (`<=>`), compares prices across platforms, and generates accurate shopping recommendations with clickable links.
 
 ---
@@ -24,10 +24,10 @@ This project is an enterprise-grade backend service built with **NestJS**, **Sup
 | **Framework** | [NestJS v11](https://nestjs.com/) | Scalable server-side TypeScript framework utilizing modular architecture and Dependency Injection. |
 | **Language & Runtime** | TypeScript & Node.js | Strict type safety across entities, DTOs, interfaces, and AI chains. |
 | **Primary Database** | PostgreSQL via [Supabase](https://supabase.com/) | Managed cloud database hosting user data and product catalog. |
-| **Vector Database** | [pgvector](https://github.com/pgvector/pgvector) | Native PostgreSQL extension for high-performance vector similarity search (`vector(1536)`). |
+| **Vector Database** | [pgvector](https://github.com/pgvector/pgvector) | Native PostgreSQL extension for high-performance vector similarity search (`vector(3072)`). |
 | **ORM** | [TypeORM](https://typeorm.io/) | Object-Relational Mapper connecting NestJS with PostgreSQL and `pgvector`. |
-| **AI & LLM Orchestration** | [LangChain Core](https://js.langchain.com/) (`@langchain/core`, `@langchain/openai`, `@langchain/google-genai`) | Prompt templating, structured output parsing, runnable sequences, and embeddings. |
-| **LLM Models** | OpenAI `gpt-4o-mini`, `gpt-4o`, `text-embedding-3-small` | Fast data extraction, high-accuracy conversational RAG answers, and dense vector embeddings. |
+| **AI & LLM Orchestration** | [LangChain](https://js.langchain.com/) (`@langchain/core`, `@langchain/google-genai`) | Prompt templating, structured output parsing, runnable sequences, and embeddings. |
+| **LLM Models** | Google Gemini `gemini-3.6-flash`, `gemini-embedding-001` | Fast data extraction, conversational RAG, and 3072-dim embeddings. |
 | **Web Scraping** | [Firecrawl](https://www.firecrawl.dev/) (`@mendable/firecrawl-js`) + Fetch/Cheerio fallback | Bypasses e-commerce anti-bot protections and converts dynamic web pages into clean Markdown. |
 | **Schema Validation** | [Zod v3](https://zod.dev/) (`3.25.x`) & `class-validator` | Strict schema validation for LangChain outputs and incoming HTTP request DTOs. |
 | **File Upload Handling** | Multer (`@nestjs/platform-express`) | Multipart/form-data image processing with MIME-type filtering and 5MB payload limits. |

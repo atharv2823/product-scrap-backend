@@ -1,9 +1,7 @@
-// src/scraper/extractors/langchain-extractor.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ChatOpenAI } from '@langchain/openai';
-import { ScrapedProductItem, ScrapedProductListSchema } from 'src/scraper/interfaces/product-schema';
-
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { ScrapedProductItem, ScrapedProductListSchema } from '../../interfaces/product-schema';
 
 @Injectable()
 export class LangChainExtractorService {
@@ -11,11 +9,14 @@ export class LangChainExtractorService {
     private llm: any;
 
     constructor(private configService: ConfigService) {
-        // You can use ChatOpenAI or ChatGoogleGenerativeAI
-        this.llm = new ChatOpenAI({
-            model: 'gpt-4o-mini',
+        const apiKey =
+            this.configService.get<string>('GEMINI_API_KEY') ||
+            this.configService.get<string>('OPENAI_API_KEY');
+
+        this.llm = new ChatGoogleGenerativeAI({
+            model: 'gemini-3.8-flash',
             temperature: 0,
-            apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+            apiKey: apiKey,
         });
     }
 

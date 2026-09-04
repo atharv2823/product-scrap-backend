@@ -30,8 +30,8 @@ export class ScrapedProduct {
     @Column({ type: 'text', nullable: true })
     description: string;
 
-    // 1536 dimensions for text-embedding-3-small or 768 for Gemini/CLIP
-    @Column({ type: 'vector', length: 1536, nullable: true })
+    // 3072 dimensions for Gemini gemini-embedding-001
+    @Column({ type: 'vector', length: 3072, nullable: true })
     embedding: number[];
 
     @CreateDateColumn()

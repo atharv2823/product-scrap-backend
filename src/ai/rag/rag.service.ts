@@ -1,6 +1,6 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
@@ -8,17 +8,21 @@ import { ProductService } from '../../product/product.service';
 
 @Injectable()
 export class RagService {
-    private llm: ChatOpenAI;
+    private llm: ChatGoogleGenerativeAI;
 
     constructor(
         private configService: ConfigService,
         @Inject(forwardRef(() => ProductService))
         private productService: ProductService,
     ) {
-        this.llm = new ChatOpenAI({
-            model: 'gpt-4o',
+        const apiKey =
+            this.configService.get<string>('GEMINI_API_KEY') ||
+            this.configService.get<string>('OPENAI_API_KEY');
+
+        this.llm = new ChatGoogleGenerativeAI({
+            model: 'gemini-3.6-flash',
             temperature: 0.2,
-            apiKey: this.configService.get<string>('OPENAI_API_KEY'),
+            apiKey: apiKey,
         });
     }
 

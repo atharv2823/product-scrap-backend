@@ -9,10 +9,13 @@ export class ProductSearchController {
 
     @Post('upload-image')
     @UseInterceptors(FileInterceptor('file', {
-        limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+        limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
         fileFilter: (req, file, cb) => {
-            if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
-                return cb(new BadRequestException('Only image files are allowed'), false);
+            const isValidMime = file.mimetype.startsWith('image/') || file.mimetype === 'application/octet-stream';
+            const isValidExt = /\.(jpg|jpeg|png|webp|gif)$/i.test(file.originalname);
+
+            if (!isValidMime && !isValidExt) {
+                return cb(new BadRequestException('Only image files are allowed (jpg, jpeg, png, webp)'), false);
             }
             cb(null, true);
         },
