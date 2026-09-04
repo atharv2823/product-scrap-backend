@@ -68,9 +68,28 @@ Guidelines:
             new StringOutputParser(),
         ]);
 
-        return await chain.invoke({
-            context,
-            question: userQuestion,
+        return this.withRetry(async () => {
+            return await chain.invoke({
+                context,
+                question: userQuestion,
+            });
         });
+    }
+
+    private async withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 3000): Promise<T> {
+        try {
+            return await fn();
+        } catch (error) {
+            const isRateLimit =
+                error?.status === 429 ||
+                error?.message?.includes('429') ||
+                error?.message?.includes('Quota exceeded');
+
+            if (isRateLimit && retries > 0) {
+                await new Promise((resolve) => setTimeout(resolve, delayMs));
+                return this.withRetry(fn, retries - 1, delayMs * 2);
+            }
+            throw error;
+        }
     }
 }

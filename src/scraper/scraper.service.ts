@@ -37,32 +37,28 @@ export class ScraperService {
             { name: 'ajio', url: `https://www.ajio.com/search/?text=${encodedQuery}` },
         ];
 
-        const scrapePromises = platforms.map(async (platform) => {
+        const pageFetchPromises = platforms.map(async (p) => {
             try {
-                const markdown = await this.fetchPageMarkdown(platform.url);
-                if (!markdown) return [];
-
-                const items = await this.extractor.extractProductsFromContent(markdown, platform.name);
-                return items.map((item) => ({
-                    ...item,
-                    platform: platform.name,
-                }));
+                const markdown = await this.fetchPageMarkdown(p.url);
+                return markdown ? { platform: p.name, content: markdown } : null;
             } catch (err) {
-                this.logger.error(`Failed to scrape ${platform.name}: ${err.message}`);
-                return [];
+                this.logger.error(`Failed to fetch page for ${p.name}: ${err.message}`);
+                return null;
             }
         });
 
-        const results = await Promise.allSettled(scrapePromises);
+        const fetchResults = await Promise.allSettled(pageFetchPromises);
+        const validPages = fetchResults
+            .filter((r): r is PromiseFulfilledResult<{ platform: 'amazon' | 'flipkart' | 'ajio'; content: string }> => r.status === 'fulfilled' && !!r.value)
+            .map((r) => r.value);
 
-        const allProducts: NormalizedScrapedProduct[] = [];
-        for (const res of results) {
-            if (res.status === 'fulfilled') {
-                allProducts.push(...res.value);
-            }
-        }
+        if (validPages.length === 0) return [];
 
-        return allProducts;
+        const items = await this.extractor.extractAllPlatformsCombined(validPages);
+        return items.map((item) => ({
+            ...item,
+            platform: (item.platform as 'amazon' | 'flipkart' | 'ajio') || 'amazon',
+        }));
     }
 
     private async fetchPageMarkdown(url: string): Promise<string | null> {

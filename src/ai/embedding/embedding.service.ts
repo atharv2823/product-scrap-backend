@@ -20,4 +20,9 @@ export class EmbeddingService {
     async generateEmbedding(text: string): Promise<number[]> {
         return await this.embeddings.embedQuery(text);
     }
+
+    async generateBatchEmbeddings(texts: string[]): Promise<number[][]> {
+        if (!texts || texts.length === 0) return [];
+        return await this.embeddings.embedDocuments(texts);
+    }
 }

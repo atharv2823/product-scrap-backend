@@ -1,29 +1,41 @@
-// src/product-search/product-search.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ScraperService } from '../scraper/scraper.service';
 import { ProductService } from '../product/product.service';
+import { VisionService } from '../ai/vision/vision.service';
 
 @Injectable()
 export class ProductSearchService {
+  private readonly logger = new Logger(ProductSearchService.name);
+
   constructor(
     private scraperService: ScraperService,
     private productService: ProductService,
-  ) { }
+    private visionService: VisionService,
+  ) {}
 
   async processImageSearch(file: Express.Multer.File) {
-    // 1. Send image to Vision model or extract query
-    // Example detected query from image:
-    const detectedQuery = 'Nike Air Jordan 1 Retro High';
+    // 1. Send image to Gemini Vision model to detect product details & optimal query
+    const analysis = await this.visionService.analyzeProductImage(file);
 
-    // 2. Scrape Amazon, Flipkart, Ajio in parallel
-    const scrapedProducts = await this.scraperService.scrapeAllPlatforms(detectedQuery);
+    this.logger.log(`Visual AI detected: "${analysis.productName}" (Query: "${analysis.searchQuery}")`);
+
+    // 2. Scrape Amazon, Flipkart, Ajio in parallel using the detected search query
+    const scrapedProducts = await this.scraperService.scrapeAllPlatforms(analysis.searchQuery);
 
     // 3. Store into Supabase pgvector with embeddings
     const savedProducts = await this.productService.saveScrapedProducts(scrapedProducts);
 
+    // 4. Return dynamic user feedback and scraped product comparison
     return {
       success: true,
-      detectedQuery,
+      userFeedback: analysis.userFeedback,
+      analysis: {
+        productName: analysis.productName,
+        brand: analysis.brand,
+        category: analysis.category,
+        color: analysis.color,
+        searchQuery: analysis.searchQuery,
+      },
       totalFound: savedProducts.length,
       products: savedProducts,
     };

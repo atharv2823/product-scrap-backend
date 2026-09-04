@@ -15,13 +15,15 @@ export class ProductService {
   ) {}
 
   async saveScrapedProducts(products: NormalizedScrapedProduct[]): Promise<ScrapedProduct[]> {
-    const saved: ScrapedProduct[] = [];
-    for (const p of products) {
-      // Create embedding from title and platform
-      const embeddingText = `${p.platform} ${p.title} Price: ${p.price}`;
-      const embedding = await this.embeddingService.generateEmbedding(embeddingText);
+    if (!products || products.length === 0) return [];
 
-      const entity = this.productRepo.create({
+    // 1. Batch generate embeddings in a SINGLE API call instead of a loop
+    const embeddingTexts = products.map((p) => `${p.platform} ${p.title} Price: ${p.price}`);
+    const embeddings = await this.embeddingService.generateBatchEmbeddings(embeddingTexts);
+
+    // 2. Build entities with assigned embeddings
+    const entities = products.map((p, index) =>
+      this.productRepo.create({
         platform: p.platform,
         title: p.title,
         price: p.price,
@@ -29,12 +31,11 @@ export class ProductService {
         rating: p.rating,
         productUrl: p.productUrl,
         imageUrl: p.imageUrl,
-        embedding: embedding,
-      });
+        embedding: embeddings[index] || null,
+      }),
+    );
 
-      saved.push(await this.productRepo.save(entity));
-    }
-    return saved;
+    return await this.productRepo.save(entities);
   }
 
   // Vector similarity search using pgvector cosine distance (<=>)

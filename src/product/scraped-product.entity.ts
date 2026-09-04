@@ -15,10 +15,10 @@ export class ScrapedProduct {
     @Column('decimal', { precision: 10, scale: 2 })
     price: number;
 
-    @Column({ nullable: true })
+    @Column('decimal', { precision: 10, scale: 2, nullable: true })
     originalPrice: number;
 
-    @Column({ nullable: true })
+    @Column('decimal', { precision: 3, scale: 2, nullable: true })
     rating: number;
 
     @Column()

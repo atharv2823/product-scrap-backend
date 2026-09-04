@@ -75,12 +75,15 @@ flowchart TD
 
 ```text
 src/
-├── ai/                                       # AI, Embeddings & RAG Engine
+├── ai/                                       # AI, Embeddings, Vision & RAG Engine
 │   ├── embedding/
-│   │   └── embedding.service.ts              # Generates 1536-dim embeddings via OpenAI text-embedding-3-small
+│   │   └── embedding.service.ts              # Generates 3072-dim embeddings via gemini-embedding-001
 │   ├── rag/
-│   │   └── rag.service.ts                    # LangChain RAG pipeline (retrieves from pgvector, prompts LLM)
-│   └── ai.module.ts                          # Exports EmbeddingService & RagService (with forwardRef)
+│   │   └── rag.service.ts                    # LangChain RAG pipeline (retrieves from pgvector, prompts Gemini)
+│   ├── vision/
+│   │   ├── product-visual-analysis.schema.ts # Zod schema for visual product recognition
+│   │   └── vision.service.ts                 # Multimodal Gemini Vision model to detect products from image buffers
+│   └── ai.module.ts                          # Exports EmbeddingService, RagService & VisionService
 │
 ├── scraper/                                  # Web Scraping & LangChain Data Extraction
 │   ├── extractors/
