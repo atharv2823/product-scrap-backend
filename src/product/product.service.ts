@@ -50,4 +50,21 @@ export class ProductService {
       .limit(limit)
       .getMany();
   }
+
+  async findAll(limit = 20, offset = 0): Promise<ScrapedProduct[]> {
+    return await this.productRepo.find({
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+  }
+
+  async findOne(id: string): Promise<ScrapedProduct | null> {
+    return await this.productRepo.findOne({ where: { id } });
+  }
+
+  async remove(id: string): Promise<{ success: boolean; message: string }> {
+    await this.productRepo.delete(id);
+    return { success: true, message: `Product ${id} deleted successfully` };
+  }
 }

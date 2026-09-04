@@ -1,5 +1,5 @@
 // src/product-search/product-search.controller.ts
-import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException, Body } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductSearchService } from './product-search.service';
 
@@ -23,5 +23,11 @@ export class ProductSearchController {
     async uploadAndSearch(@UploadedFile() file: Express.Multer.File) {
         if (!file) throw new BadRequestException('Image file is required');
         return this.searchService.processImageSearch(file);
+    }
+
+    @Post('text')
+    async searchByText(@Body('query') query: string) {
+        if (!query) throw new BadRequestException('Query string is required');
+        return this.searchService.processTextSearch(query);
     }
 }

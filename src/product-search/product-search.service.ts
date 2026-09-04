@@ -40,4 +40,18 @@ export class ProductSearchService {
       products: savedProducts,
     };
   }
+
+  async processTextSearch(query: string) {
+    this.logger.log(`Initiating multi-platform scrape for text query: "${query}"`);
+
+    const scrapedProducts = await this.scraperService.scrapeAllPlatforms(query);
+    const savedProducts = await this.productService.saveScrapedProducts(scrapedProducts);
+
+    return {
+      success: true,
+      query,
+      totalFound: savedProducts.length,
+      products: savedProducts,
+    };
+  }
 }

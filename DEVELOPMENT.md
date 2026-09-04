@@ -281,13 +281,21 @@ FIRECRAWL_API_KEY=fc-xxxxxxxxxxxxxxxxxxxxxxxx
 
 ## 9. API Reference Summary
 
+> For detailed request/response payloads and curl commands, see **[API_DOCUMENTATION.md](file:///d:/Personal%20Project's/product-scrap-backend/API_DOCUMENTATION.md)**.
+
 | Method | Endpoint | Request Type | Description |
 |---|---|---|---|
-| `POST` | `/product-search/upload-image` | `multipart/form-data` (`file`) | Uploads product image, triggers multi-platform scrape, saves vectors, and returns matching products. |
-| `POST` | `/chat` | `application/json` (`{ "message": "..." }`) | Queries the RAG shopping chatbot for price comparisons and recommendations. |
+| `POST` | `/product-search/upload-image` | `multipart/form-data` (`file`) | Uploads image, Gemini Vision analyzes it, scrapes Amazon/Flipkart/Ajio, saves vectors, returns feedback + products. |
+| `POST` | `/product-search/text` | `application/json` (`{ "query": "..." }`) | Triggers multi-platform scrape by text query, stores to pgvector, returns products. |
+| `POST` | `/chat` | `application/json` (`{ "message": "..." }`) | Conversational RAG chatbot compares prices and provides markdown links. |
+| `GET` | `/product` | Query params (`?limit=20&offset=0`) | Lists stored products with pagination. |
+| `GET` | `/product/search` | Query params (`?q=...&limit=6`) | Semantic vector similarity search against stored catalog. |
+| `GET` | `/product/:id` | Route param (`:id`) | Retrieves single product details by UUID. |
+| `DELETE` | `/product/:id` | Route param (`:id`) | Deletes product from database. |
 | `POST` | `/auth/register` | `application/json` | Registers a new user account. |
 | `POST` | `/auth/login` | `application/json` | Authenticates user and returns JWT access token. |
-| `GET` | `/user` | Bearer JWT | Retrieves user profile data. |
+| `GET` | `/user/profile` | Bearer JWT | Protected route: retrieves logged-in user profile. |
+| `GET` | `/user` | None | Retrieves all registered users. |
 
 ---
 
