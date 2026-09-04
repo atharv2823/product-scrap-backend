@@ -1,11 +1,10 @@
-// src/ai/rag.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { RunnableSequence } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
-import { ProductService } from 'src/product/product.service';
+import { ProductService } from '../../product/product.service';
 
 @Injectable()
 export class RagService {
@@ -13,6 +12,7 @@ export class RagService {
 
     constructor(
         private configService: ConfigService,
+        @Inject(forwardRef(() => ProductService))
         private productService: ProductService,
     ) {
         this.llm = new ChatOpenAI({

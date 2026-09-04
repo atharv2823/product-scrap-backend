@@ -1,16 +1,16 @@
-// src/product/product.service.ts
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ScrapedProduct } from './scraped-product.entity';
 import { NormalizedScrapedProduct } from '../scraper/scraper.service';
-import { EmbeddingService } from 'src/ai/embedding/embedding.service';
+import { EmbeddingService } from '../ai/embedding/embedding.service';
 
 @Injectable()
 export class ProductService {
   constructor(
     @InjectRepository(ScrapedProduct)
     private productRepo: Repository<ScrapedProduct>,
+    @Inject(forwardRef(() => EmbeddingService))
     private embeddingService: EmbeddingService,
   ) {}
 

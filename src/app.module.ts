@@ -9,6 +9,7 @@ import { ProductSearchModule } from './product-search/product-search.module';
 import { ProductModule } from './product/product.module';
 import { ScraperModule } from './scraper/scraper.module';
 import { AiModule } from './ai/ai.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AiModule } from './ai/ai.module';
     ProductModule,
     ScraperModule,
     AiModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
