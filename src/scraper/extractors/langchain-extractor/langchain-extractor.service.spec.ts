@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LangchainExtractorService } from './langchain-extractor.service';
+import { LangChainExtractorService } from './langchain-extractor.service';
 
-describe('LangchainExtractorService', () => {
-  let service: LangchainExtractorService;
+describe('LangChainExtractorService', () => {
+  let service: LangChainExtractorService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LangchainExtractorService],
+      providers: [LangChainExtractorService],
     }).compile();
 
-    service = module.get<LangchainExtractorService>(LangchainExtractorService);
+    service = module.get<LangChainExtractorService>(LangChainExtractorService);
   });
 
   it('should be defined', () => {

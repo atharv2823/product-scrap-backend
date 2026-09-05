@@ -22,10 +22,19 @@ export class ProductSearchService {
     // 2. Scrape Amazon, Flipkart, Ajio in parallel using the detected search query
     const scrapedProducts = await this.scraperService.scrapeAllPlatforms(analysis.searchQuery);
 
-    // 3. Store into Supabase pgvector with embeddings
-    const savedProducts = await this.productService.saveScrapedProducts(scrapedProducts);
+    // 3. Store into Supabase pgvector with embeddings in the background (non-blocking)
+    if (scrapedProducts.length > 0) {
+      this.productService
+        .saveScrapedProducts(scrapedProducts)
+        .then((saved) =>
+          this.logger.log(`Background sync complete: saved ${saved.length} products to pgvector`),
+        )
+        .catch((err) =>
+          this.logger.error(`Background pgvector sync failed: ${err.message}`),
+        );
+    }
 
-    // 4. Return dynamic user feedback and scraped product comparison
+    // 4. Return dynamic user feedback and scraped product comparison immediately
     return {
       success: true,
       userFeedback: analysis.userFeedback,
@@ -36,8 +45,8 @@ export class ProductSearchService {
         color: analysis.color,
         searchQuery: analysis.searchQuery,
       },
-      totalFound: savedProducts.length,
-      products: savedProducts,
+      totalFound: scrapedProducts.length,
+      products: scrapedProducts,
     };
   }
 
@@ -45,13 +54,24 @@ export class ProductSearchService {
     this.logger.log(`Initiating multi-platform scrape for text query: "${query}"`);
 
     const scrapedProducts = await this.scraperService.scrapeAllPlatforms(query);
-    const savedProducts = await this.productService.saveScrapedProducts(scrapedProducts);
+
+    // Background sync to pgvector
+    if (scrapedProducts.length > 0) {
+      this.productService
+        .saveScrapedProducts(scrapedProducts)
+        .then((saved) =>
+          this.logger.log(`Background sync complete: saved ${saved.length} products to pgvector`),
+        )
+        .catch((err) =>
+          this.logger.error(`Background pgvector sync failed: ${err.message}`),
+        );
+    }
 
     return {
       success: true,
       query,
-      totalFound: savedProducts.length,
-      products: savedProducts,
+      totalFound: scrapedProducts.length,
+      products: scrapedProducts,
     };
   }
 }

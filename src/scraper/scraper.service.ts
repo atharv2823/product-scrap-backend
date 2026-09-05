@@ -63,13 +63,34 @@ export class ScraperService {
 
     private async fetchPageMarkdown(url: string): Promise<string | null> {
         if (this.firecrawl) {
-            const response = await this.firecrawl.scrapeUrl(url, { formats: ['markdown'] });
-            return response.markdown || null;
+            try {
+                const response = await this.firecrawl.scrapeUrl(url, {
+                    formats: ['markdown'],
+                    onlyMainContent: true,
+                    blockAds: true,
+                    removeBase64Images: true,
+                    timeout: 15000,
+                    waitFor: 1000,
+                });
+                return (response as any)?.markdown || null;
+            } catch (err) {
+                this.logger.warn(`Firecrawl scrape failed or timed out for ${url}: ${err.message}`);
+            }
         }
-        // Fallback: Basic fetch if Firecrawl API key is not configured
-        const res = await fetch(url, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-        });
-        return await res.text();
+        // Fallback: Basic fast fetch if Firecrawl API key is not configured or times out
+        try {
+            const res = await fetch(url, {
+                headers: {
+                    'User-Agent':
+                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                },
+                signal: AbortSignal.timeout(6000),
+            });
+            return await res.text();
+        } catch (err) {
+            this.logger.warn(`Fallback fetch failed for ${url}: ${err.message}`);
+            return null;
+        }
     }
 }
