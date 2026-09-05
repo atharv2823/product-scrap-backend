@@ -28,7 +28,7 @@ import { ChatModule } from './chat/chat.module';
           rejectUnauthorized: false,
         },
       }),
-    }), 
+    }),
     UserModule,
     AuthModule,
     ProductSearchModule,

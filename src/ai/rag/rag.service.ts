@@ -8,32 +8,35 @@ import { ProductService } from '../../product/product.service';
 
 @Injectable()
 export class RagService {
-    private llm: ChatGoogleGenerativeAI;
+  private llm: ChatGoogleGenerativeAI;
 
-    constructor(
-        private configService: ConfigService,
-        @Inject(forwardRef(() => ProductService))
-        private productService: ProductService,
-    ) {
-        const apiKey =
-            this.configService.get<string>('GEMINI_API_KEY') ||
-            this.configService.get<string>('OPENAI_API_KEY');
+  constructor(
+    private configService: ConfigService,
+    @Inject(forwardRef(() => ProductService))
+    private productService: ProductService,
+  ) {
+    const apiKey =
+      this.configService.get<string>('GEMINI_API_KEY') ||
+      this.configService.get<string>('OPENAI_API_KEY');
 
-        this.llm = new ChatGoogleGenerativeAI({
-            model: 'gemini-3.6-flash',
-            temperature: 0.2,
-            apiKey: apiKey,
-        });
-    }
+    this.llm = new ChatGoogleGenerativeAI({
+      model: 'gemini-3.6-flash',
+      temperature: 0.2,
+      apiKey: apiKey,
+    });
+  }
 
-    async answerShoppingQuery(userQuestion: string) {
-        // 1. Retrieve top 6 most relevant products from pgvector
-        const matchedProducts = await this.productService.searchSimilar(userQuestion, 6);
+  async answerShoppingQuery(userQuestion: string) {
+    // 1. Retrieve top 6 most relevant products from pgvector
+    const matchedProducts = await this.productService.searchSimilar(
+      userQuestion,
+      6,
+    );
 
-        // 2. Format products into RAG context
-        const context = matchedProducts
-            .map(
-                (p) => `
+    // 2. Format products into RAG context
+    const context = matchedProducts
+      .map(
+        (p) => `
 - Platform: ${p.platform.toUpperCase()}
   Title: ${p.title}
   Price: ₹${p.price} (Original: ₹${p.originalPrice || 'N/A'})
@@ -41,14 +44,14 @@ export class RagService {
   Link: ${p.productUrl}
   Image: ${p.imageUrl}
 `,
-            )
-            .join('\n');
+      )
+      .join('\n');
 
-        // 3. Prompt Template enforcing accurate comparison
-        const prompt = ChatPromptTemplate.fromMessages([
-            [
-                'system',
-                `You are an expert AI shopping assistant and price comparison advisor.
+    // 3. Prompt Template enforcing accurate comparison
+    const prompt = ChatPromptTemplate.fromMessages([
+      [
+        'system',
+        `You are an expert AI shopping assistant and price comparison advisor.
 Use the following retrieved products to answer the user's question:
 
 {context}
@@ -58,38 +61,42 @@ Guidelines:
 2. Provide direct clickable markdown links [Buy on Platform](url).
 3. If no products match, tell the user politely to try searching with another keyword or image.
 4. Keep the tone helpful and concise.`,
-            ],
-            ['human', '{question}'],
-        ]);
+      ],
+      ['human', '{question}'],
+    ]);
 
-        const chain = RunnableSequence.from([
-            prompt,
-            this.llm,
-            new StringOutputParser(),
-        ]);
+    const chain = RunnableSequence.from([
+      prompt,
+      this.llm,
+      new StringOutputParser(),
+    ]);
 
-        return this.withRetry(async () => {
-            return await chain.invoke({
-                context,
-                question: userQuestion,
-            });
-        });
+    return this.withRetry(async () => {
+      return await chain.invoke({
+        context,
+        question: userQuestion,
+      });
+    });
+  }
+
+  private async withRetry<T>(
+    fn: () => Promise<T>,
+    retries = 3,
+    delayMs = 3000,
+  ): Promise<T> {
+    try {
+      return await fn();
+    } catch (error) {
+      const isRateLimit =
+        error?.status === 429 ||
+        error?.message?.includes('429') ||
+        error?.message?.includes('Quota exceeded');
+
+      if (isRateLimit && retries > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        return this.withRetry(fn, retries - 1, delayMs * 2);
+      }
+      throw error;
     }
-
-    private async withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 3000): Promise<T> {
-        try {
-            return await fn();
-        } catch (error) {
-            const isRateLimit =
-                error?.status === 429 ||
-                error?.message?.includes('429') ||
-                error?.message?.includes('Quota exceeded');
-
-            if (isRateLimit && retries > 0) {
-                await new Promise((resolve) => setTimeout(resolve, delayMs));
-                return this.withRetry(fn, retries - 1, delayMs * 2);
-            }
-            throw error;
-        }
-    }
+  }
 }

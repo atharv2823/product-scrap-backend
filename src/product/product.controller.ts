@@ -1,4 +1,11 @@
-import { Controller, Get, Delete, Param, Query, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Param,
+  Query,
+  NotFoundException,
+} from '@nestjs/common';
 import { ProductService } from './product.service';
 import { ScrapedProduct } from './scraped-product.entity';
 

@@ -4,25 +4,25 @@ import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 @Injectable()
 export class EmbeddingService {
-    private embeddings: GoogleGenerativeAIEmbeddings;
+  private embeddings: GoogleGenerativeAIEmbeddings;
 
-    constructor(private configService: ConfigService) {
-        const apiKey =
-            this.configService.get<string>('GEMINI_API_KEY') ||
-            this.configService.get<string>('OPENAI_API_KEY');
+  constructor(private configService: ConfigService) {
+    const apiKey =
+      this.configService.get<string>('GEMINI_API_KEY') ||
+      this.configService.get<string>('OPENAI_API_KEY');
 
-        this.embeddings = new GoogleGenerativeAIEmbeddings({
-            model: 'gemini-embedding-001', // 3072 dimensions
-            apiKey: apiKey,
-        });
-    }
+    this.embeddings = new GoogleGenerativeAIEmbeddings({
+      model: 'gemini-embedding-001', // 3072 dimensions
+      apiKey: apiKey,
+    });
+  }
 
-    async generateEmbedding(text: string): Promise<number[]> {
-        return await this.embeddings.embedQuery(text);
-    }
+  async generateEmbedding(text: string): Promise<number[]> {
+    return await this.embeddings.embedQuery(text);
+  }
 
-    async generateBatchEmbeddings(texts: string[]): Promise<number[][]> {
-        if (!texts || texts.length === 0) return [];
-        return await this.embeddings.embedDocuments(texts);
-    }
+  async generateBatchEmbeddings(texts: string[]): Promise<number[][]> {
+    if (!texts || texts.length === 0) return [];
+    return await this.embeddings.embedDocuments(texts);
+  }
 }

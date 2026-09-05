@@ -14,12 +14,17 @@ export class ProductService {
     private embeddingService: EmbeddingService,
   ) {}
 
-  async saveScrapedProducts(products: NormalizedScrapedProduct[]): Promise<ScrapedProduct[]> {
+  async saveScrapedProducts(
+    products: NormalizedScrapedProduct[],
+  ): Promise<ScrapedProduct[]> {
     if (!products || products.length === 0) return [];
 
     // 1. Batch generate embeddings in a SINGLE API call instead of a loop
-    const embeddingTexts = products.map((p) => `${p.platform} ${p.title} Price: ${p.price}`);
-    const embeddings = await this.embeddingService.generateBatchEmbeddings(embeddingTexts);
+    const embeddingTexts = products.map(
+      (p) => `${p.platform} ${p.title} Price: ${p.price}`,
+    );
+    const embeddings =
+      await this.embeddingService.generateBatchEmbeddings(embeddingTexts);
 
     // 2. Build entities with assigned embeddings
     const entities = products.map((p, index) =>
@@ -40,7 +45,8 @@ export class ProductService {
 
   // Vector similarity search using pgvector cosine distance (<=>)
   async searchSimilar(queryText: string, limit = 5): Promise<ScrapedProduct[]> {
-    const queryEmbedding = await this.embeddingService.generateEmbedding(queryText);
+    const queryEmbedding =
+      await this.embeddingService.generateEmbedding(queryText);
     const vectorString = `[${queryEmbedding.join(',')}]`;
 
     return await this.productRepo

@@ -17,17 +17,23 @@ export class ProductSearchService {
     // 1. Send image to Gemini Vision model to detect product details & optimal query
     const analysis = await this.visionService.analyzeProductImage(file);
 
-    this.logger.log(`Visual AI detected: "${analysis.productName}" (Query: "${analysis.searchQuery}")`);
+    this.logger.log(
+      `Visual AI detected: "${analysis.productName}" (Query: "${analysis.searchQuery}")`,
+    );
 
     // 2. Scrape Amazon, Flipkart, Ajio in parallel using the detected search query
-    const scrapedProducts = await this.scraperService.scrapeAllPlatforms(analysis.searchQuery);
+    const scrapedProducts = await this.scraperService.scrapeAllPlatforms(
+      analysis.searchQuery,
+    );
 
     // 3. Store into Supabase pgvector with embeddings in the background (non-blocking)
     if (scrapedProducts.length > 0) {
       this.productService
         .saveScrapedProducts(scrapedProducts)
         .then((saved) =>
-          this.logger.log(`Background sync complete: saved ${saved.length} products to pgvector`),
+          this.logger.log(
+            `Background sync complete: saved ${saved.length} products to pgvector`,
+          ),
         )
         .catch((err) =>
           this.logger.error(`Background pgvector sync failed: ${err.message}`),
@@ -51,7 +57,9 @@ export class ProductSearchService {
   }
 
   async processTextSearch(query: string) {
-    this.logger.log(`Initiating multi-platform scrape for text query: "${query}"`);
+    this.logger.log(
+      `Initiating multi-platform scrape for text query: "${query}"`,
+    );
 
     const scrapedProducts = await this.scraperService.scrapeAllPlatforms(query);
 
@@ -60,7 +68,9 @@ export class ProductSearchService {
       this.productService
         .saveScrapedProducts(scrapedProducts)
         .then((saved) =>
-          this.logger.log(`Background sync complete: saved ${saved.length} products to pgvector`),
+          this.logger.log(
+            `Background sync complete: saved ${saved.length} products to pgvector`,
+          ),
         )
         .catch((err) =>
           this.logger.error(`Background pgvector sync failed: ${err.message}`),
