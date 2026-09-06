@@ -22,12 +22,24 @@ export class UserService {
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
-      throw new NotFoundException('Employee not found');
+      throw new NotFoundException('User not found');
     }
     return user;
   }
 
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
+  }
+
+  async delete(id: number): Promise<{ message: string }> {
+    const result = await this.userRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return { message: `User with ID ${id} deleted successfully` };
+  }
+
+  async remove(id: number): Promise<{ message: string }> {
+    return this.delete(id);
   }
 }
