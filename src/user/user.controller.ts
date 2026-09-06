@@ -36,8 +36,8 @@ export class UserController {
   async getProfile(@Req() req: Request) {
     // Option A: Return decoded JWT payload ({ sub: userId, email: '...' })
     // return req['user'];
-    // Option B (Recommended): Fetch the full user details from the database using the ID in the token
-    const userId = req['user'].sub;
+    const userPayload = req['user'] as { sub?: number } | undefined;
+    const userId = Number(userPayload?.sub);
     return this.userService.findOne(userId);
   }
 
