@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { EmbeddingService } from './embedding.service';
 
 describe('EmbeddingService', () => {
@@ -6,7 +7,15 @@ describe('EmbeddingService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [EmbeddingService],
+      providers: [
+        EmbeddingService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue('mock-api-key'),
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<EmbeddingService>(EmbeddingService);
