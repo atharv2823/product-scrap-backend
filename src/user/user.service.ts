@@ -31,6 +31,15 @@ export class UserService {
     return this.userRepository.findOne({ where: { email } });
   }
 
+  // delete user by email
+  async deleteByEmail(email: string): Promise<{ message: string }> {
+    const result = await this.userRepository.delete({ email });
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with email ${email} not found`);
+    }
+    return { message: `User with email ${email} deleted successfully` };
+  }
+
   async delete(id: number): Promise<{ message: string }> {
     const result = await this.userRepository.delete(id);
     if (result.affected === 0) {

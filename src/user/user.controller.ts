@@ -55,6 +55,11 @@ export class UserController {
     return user;
   }
 
+  @Delete('email/:email')
+  async deleteByEmail(@Param('email') email: string): Promise<{ message: string }> {
+    return this.userService.deleteByEmail(email);
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<{ message: string }> {
     return this.userService.delete(+id);
