@@ -86,11 +86,13 @@ Guidelines:
   ): Promise<T> {
     try {
       return await fn();
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
+      const errorMessage = typeof err?.message === 'string' ? err.message : '';
       const isRateLimit =
-        error?.status === 429 ||
-        error?.message?.includes('429') ||
-        error?.message?.includes('Quota exceeded');
+        err?.status === 429 ||
+        errorMessage.includes('429') ||
+        errorMessage.includes('Quota exceeded');
 
       if (isRateLimit && retries > 0) {
         await new Promise((resolve) => setTimeout(resolve, delayMs));

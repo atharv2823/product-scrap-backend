@@ -76,11 +76,13 @@ Inspect this product image with high precision.
   ): Promise<ProductVisualAnalysis> {
     try {
       return await fn();
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { status?: number; message?: string };
+      const errorMessage = typeof err?.message === 'string' ? err.message : '';
       const isRateLimit =
-        error?.status === 429 ||
-        error?.message?.includes('429') ||
-        error?.message?.includes('Quota exceeded');
+        err?.status === 429 ||
+        errorMessage.includes('429') ||
+        errorMessage.includes('Quota exceeded');
 
       if (isRateLimit && retries > 0) {
         this.logger.warn(
@@ -92,7 +94,7 @@ Inspect this product image with high precision.
 
       this.logger.error(
         'Failed to analyze image with vision model:',
-        error.message,
+        errorMessage,
       );
       const fallbackQuery = file.originalname
         .replace(/\.[^/.]+$/, '')
