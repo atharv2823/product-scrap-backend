@@ -12,7 +12,7 @@ import {
 import type { Request } from 'express';
 import { UserService } from './user.service';
 import { User } from './user.entity';
-import { AuthGuard } from 'src/guards/auth/auth.guard';
+import { AuthGuard } from '../guards/auth/auth.guard';
 
 @Controller('user')
 export class UserController {

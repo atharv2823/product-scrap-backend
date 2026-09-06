@@ -4,7 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
-import { AuthGuard } from 'src/guards/auth/auth.guard';
+import { AuthGuard } from '../guards/auth/auth.guard';
 
 @Module({
   imports: [

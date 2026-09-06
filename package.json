@@ -89,8 +89,26 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "module": "commonjs",
+            "moduleResolution": "node10",
+            "resolvePackageJsonExports": false,
+            "allowJs": true,
+            "target": "es2021"
+          }
+        }
+      ]
     },
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1",
+      "^@nestjs/typeorm$": "<rootDir>/../test/mocks/typeorm.mock.ts"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!(@nestjs|@langchain|@mendable)/)"
+    ],
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
