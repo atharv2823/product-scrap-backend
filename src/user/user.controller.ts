@@ -34,16 +34,17 @@ export class UserController {
   @UseGuards(AuthGuard)
   @Get('profile')
   async getProfile(@Req() req: Request) {
-    // Option A: Return decoded JWT payload ({ sub: userId, email: '...' })
-    // return req['user'];
-    const userPayload = req['user'] as { sub?: number } | undefined;
-    const userId = Number(userPayload?.sub);
+    const userPayload = req['user'] as { sub?: string } | undefined;
+    const userId = userPayload?.sub;
+    if (!userId) {
+      throw new NotFoundException('User not found');
+    }
     return this.userService.findOne(userId);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number): Promise<User> {
-    return this.userService.findOne(+id);
+  async findOne(@Param('id') id: string): Promise<User> {
+    return this.userService.findOne(id);
   }
 
   @Get('email/:email')
@@ -62,6 +63,6 @@ export class UserController {
 
   @Delete(':id')
   async remove(@Param('id') id: string): Promise<{ message: string }> {
-    return this.userService.delete(+id);
+    return this.userService.delete(id);
   }
 }

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
 import { ProductSearchController } from './product-search.controller';
 import { ProductSearchService } from './product-search.service';
 
@@ -14,6 +15,15 @@ describe('ProductSearchController', () => {
           useValue: {
             processImageSearch: jest.fn(),
             processTextSearch: jest.fn(),
+            getUserSearchHistory: jest.fn(),
+            getUserSearchById: jest.fn(),
+            clearUserSearchHistory: jest.fn(),
+          },
+        },
+        {
+          provide: JwtService,
+          useValue: {
+            verifyAsync: jest.fn(),
           },
         },
       ],

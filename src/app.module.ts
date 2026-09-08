@@ -23,7 +23,9 @@ import { ChatModule } from './chat/chat.module';
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize:
+          configService.get<string>('DB_SYNC') === 'true' ||
+          process.env.NODE_ENV !== 'production',
         ssl: {
           rejectUnauthorized: false,
         },

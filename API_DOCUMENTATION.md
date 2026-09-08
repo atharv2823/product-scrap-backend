@@ -11,8 +11,13 @@
 - [1. Visual Search & Multi-Platform Scraping (`/product-search`)](#1-visual-search--multi-platform-scraping-product-search)
   - [`POST /product-search/upload-image`](#post-product-searchupload-image)
   - [`POST /product-search/text`](#post-product-searchtext)
+  - [`GET /product-search/history`](#get-product-searchhistory-protected)
+  - [`GET /product-search/history/:id`](#get-product-searchhistoryid-protected)
+  - [`DELETE /product-search/history`](#delete-product-searchhistory-protected)
 - [2. Conversational RAG Shopping Assistant (`/chat`)](#2-conversational-rag-shopping-assistant-chat)
   - [`POST /chat`](#post-chat)
+  - [`GET /chat/history`](#get-chathistory-protected)
+  - [`DELETE /chat/history`](#delete-chathistory-protected)
 - [3. Product Catalog & Vector Search (`/product`)](#3-product-catalog--vector-search-product)
   - [`GET /product`](#get-product)
   - [`GET /product/search`](#get-productsearch)
@@ -151,6 +156,93 @@ curl --location 'http://localhost:3000/product-search/text' \
 
 ---
 
+### `GET /product-search/history` (Protected)
+Retrieves the logged-in user's past product searches (both visual and text searches) in reverse chronological order, including vision metadata and product results snapshots.
+
+- **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Query Parameters**:
+  - `limit` *(optional, default: 20)*: Maximum search records to return.
+  - `offset` *(optional, default: 0)*: Pagination offset.
+
+#### Sample Curl Command
+```bash
+curl --location 'http://localhost:3000/product-search/history?limit=10&offset=0' \
+--header 'Authorization: Bearer <YOUR_JWT_TOKEN>'
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "total": 1,
+  "searches": [
+    {
+      "id": "b73a5a41-c112-4217-9104-e390c5fa624a",
+      "userId": "e4b8a2c1-3456-789a-bcde-f0123456789a",
+      "searchType": "image",
+      "query": "Puma Smash v2 white sneakers",
+      "userFeedback": "We identified a pair of Puma Smash v2 Low Top Leather Sneakers...",
+      "analysis": {
+        "productName": "Puma Smash v2 Leather Sneakers",
+        "brand": "Puma",
+        "category": "Footwear / Sneakers",
+        "color": "White / Black",
+        "searchQuery": "Puma Smash v2 white sneakers"
+      },
+      "totalFound": 3,
+      "results": [
+        {
+          "platform": "flipkart",
+          "title": "PUMA Smash v2 Leather Casual Shoes",
+          "price": 2499,
+          "originalPrice": 4499,
+          "rating": 4.3,
+          "productUrl": "https://www.flipkart.com/...",
+          "imageUrl": "https://rukminim2.flixcart.com/..."
+        }
+      ],
+      "createdAt": "2026-09-08T06:50:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### `GET /product-search/history/:id` (Protected)
+Retrieves full details and scraped product results for a specific past search.
+
+- **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **URL Parameter**: `:id` (UUID of the search history item)
+
+#### Sample Curl Command
+```bash
+curl --location 'http://localhost:3000/product-search/history/b73a5a41-c112-4217-9104-e390c5fa624a' \
+--header 'Authorization: Bearer <YOUR_JWT_TOKEN>'
+```
+
+---
+
+### `DELETE /product-search/history` (Protected)
+Clears all search history records for the authenticated user.
+
+- **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+
+#### Sample Curl Command
+```bash
+curl --location --request DELETE 'http://localhost:3000/product-search/history' \
+--header 'Authorization: Bearer <YOUR_JWT_TOKEN>'
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Search history cleared for user 1"
+}
+```
+
+---
+
 ## 2. Conversational RAG Shopping Assistant (`/chat`)
 
 ### `POST /chat`
@@ -183,6 +275,62 @@ curl --location 'http://localhost:3000/chat' \
 {
   "success": true,
   "answer": "Here is the price comparison for the **Puma Smash v2 Sneakers** across top platforms:\n\n| Platform | Price | Original Price | Rating | Buy Link |\n|---|---|---|---|---|\n| **Flipkart** | **₹2,499** | ₹4,499 | 4.3 ★ | [Buy on Flipkart](https://www.flipkart.com/...) |\n| **Ajio** | ₹2,599 | ₹4,499 | 4.4 ★ | [Buy on Ajio](https://www.ajio.com/...) |\n| **Amazon** | ₹2,699 | ₹4,499 | 4.2 ★ | [Buy on Amazon](https://www.amazon.in/...) |\n\n### Recommendation:\n**Flipkart** offers the lowest price at **₹2,499**, saving you an extra ₹200 compared to Amazon!"
+}
+```
+
+---
+
+### `GET /chat/history` (Protected)
+Retrieves the logged-in user's previous shopping assistant chat conversations in chronological order.
+
+- **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Query Parameters**:
+  - `limit` *(optional, default: 50)*: Number of past messages to return.
+  - `sessionId` *(optional)*: Filter by a specific conversation session identifier.
+
+#### Sample Curl Command
+```bash
+curl --location 'http://localhost:3000/chat/history?limit=20' \
+--header 'Authorization: Bearer <YOUR_JWT_TOKEN>'
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "total": 2,
+  "messages": [
+    {
+      "id": "c1a2b3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "userId": "e4b8a2c1-3456-789a-bcde-f0123456789a",
+      "sessionId": "dashboard-session-1",
+      "message": "Which platform has the best price for Nike Air Jordan?",
+      "response": "Here is the price comparison for Nike Air Jordan across top platforms...",
+      "createdAt": "2026-09-08T06:52:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+### `DELETE /chat/history` (Protected)
+Clears conversation history for the logged-in user (or optionally for a specific `sessionId`).
+
+- **Headers**: `Authorization: Bearer <JWT_TOKEN>`
+- **Query Parameters**:
+  - `sessionId` *(optional)*: Clears messages only belonging to this session.
+
+#### Sample Curl Command
+```bash
+curl --location --request DELETE 'http://localhost:3000/chat/history' \
+--header 'Authorization: Bearer <YOUR_JWT_TOKEN>'
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "success": true,
+  "message": "Chat history cleared for user 1"
 }
 ```
 

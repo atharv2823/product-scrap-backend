@@ -101,29 +101,36 @@ src/
 │   └── product.module.ts                     # Imports TypeOrmModule.forFeature([ScrapedProduct])
 │
 ├── product-search/                           # Image Upload & Search Orchestration
-│   ├── product-search.controller.ts          # Multipart file upload endpoint (POST /product-search/upload-image)
-│   ├── product-search.service.ts             # Coordinates Image -> Scrape -> Vector Ingestion
-│   └── product-search.module.ts              # Connects ScraperModule and ProductModule
+│   ├── entities/
+│   │   └── product-search.entity.ts          # TypeORM entity storing user-linked search history & results
+│   ├── product-search.controller.ts          # Search endpoints & history retrieval (/product-search/history)
+│   ├── product-search.service.ts             # Coordinates Image -> Scrape -> Ingestion + persists history
+│   └── product-search.module.ts              # Connects ScraperModule, ProductModule, and AuthModule
 │
 ├── chat/                                     # Conversational Chatbot API
+│   ├── entities/
+│   │   └── chat-message.entity.ts            # TypeORM entity storing conversation logs per user
 │   ├── dto/
-│   │   └── chat-query.dto.ts                 # Validates incoming chat message payloads
-│   ├── chat.controller.ts                    # Exposes POST /chat endpoint
-│   └── chat.module.ts                        # Imports AiModule
+│   │   └── chat-query.dto.ts                 # Validates incoming chat message payloads & optional sessionId
+│   ├── chat.controller.ts                    # Exposes POST /chat and GET /chat/history endpoints
+│   ├── chat.service.ts                       # Orchestrates RAG answers & persists user chat history
+│   └── chat.module.ts                        # Imports AiModule, AuthModule, TypeOrmModule
 │
 ├── auth/                                     # Authentication & JWT
 │   ├── auth.controller.ts                    # User login and registration endpoints
 │   ├── auth.service.ts                       # JWT issuance and password verification
-│   └── auth.module.ts
+│   └── auth.module.ts                        # Registers JwtModule and exports AuthGuard & OptionalAuthGuard
 │
 ├── user/                                     # User Profile Management
 │   ├── user.entity.ts                        # TypeORM User entity (id, email, password, firstName, lastName)
 │   ├── user.controller.ts                    # User CRUD endpoints
 │   └── user.service.ts                       # User persistence logic
 │
-├── guards/                                   # Route Guards
+├── guards/                                   # Route Guards & Decorators
 │   └── auth/
-│       └── auth.guard.ts                     # JWT Bearer token authentication guard
+│       ├── auth.guard.ts                     # Strict JWT Bearer token authentication guard
+│       ├── optional-auth.guard.ts            # Optional JWT Bearer guard attaching user payload when present
+│       └── current-user.decorator.ts         # @CurrentUser() parameter decorator extracting UserPayload
 │
 ├── app.module.ts                             # Root module configuring TypeORM, ConfigModule, and feature modules
 └── main.ts                                   # Application bootstrap entry point
@@ -225,6 +232,46 @@ src/
      - Mandates strict adherence to provided context to eliminate hallucinations.
   4. **Execution**: Handled through a LangChain `RunnableSequence` with `StringOutputParser`.
 
+### 5.5. User-Linked History Flow (`ProductSearch` & `ChatMessage`)
+- **Workflow**:
+  1. User authenticates via `/auth/register` or `/auth/login` and receives a JWT token containing `{ sub: userId, email: user.email }`.
+  2. On the dashboard, user triggers a search (`POST /product-search/upload-image` or `POST /product-search/text`) or chat (`POST /chat`) with `Authorization: Bearer <token>`.
+  3. `OptionalAuthGuard` extracts the authenticated `userId` from the token without blocking unauthenticated requests.
+  4. The search/chat service persists the interaction linked to `userId`:
+     - Visual/Text searches are stored in `product_searches` (UUID, `userId`, `searchType`, `query`, `userFeedback`, `analysis`, `totalFound`, `results` JSON, and `createdAt`).
+     - Chat queries are stored in `chat_messages` (UUID, `userId`, `sessionId`, `message`, `response`, and `createdAt`).
+  5. When the user logs in, their dashboard retrieves previous activity via:
+     - `GET /product-search/history`: Returns previous searches and saved product result snapshots.
+     - `GET /chat/history`: Returns previous conversation messages and AI responses in chronological order.
+
+#### PostgreSQL DDL Schema for Supabase
+```sql
+-- 1. Product Searches Table
+CREATE TABLE IF NOT EXISTS product_searches (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID REFERENCES "user"(id) ON DELETE CASCADE,
+    "searchType" VARCHAR(50) DEFAULT 'text',
+    query TEXT NOT NULL,
+    "userFeedback" TEXT,
+    analysis JSONB,
+    "totalFound" INT DEFAULT 0,
+    results JSONB,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_product_searches_user_id ON product_searches("userId");
+
+-- 2. Chat Messages Table
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID REFERENCES "user"(id) ON DELETE CASCADE,
+    "sessionId" VARCHAR(255),
+    message TEXT NOT NULL,
+    response TEXT NOT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_user_id ON chat_messages("userId");
+```
+
 ---
 
 ## 6. Dependency Graph & Circular Dependency Prevention
@@ -285,9 +332,14 @@ FIRECRAWL_API_KEY=fc-xxxxxxxxxxxxxxxxxxxxxxxx
 
 | Method | Endpoint | Request Type | Description |
 |---|---|---|---|
-| `POST` | `/product-search/upload-image` | `multipart/form-data` (`file`) | Uploads image, Gemini Vision analyzes it, scrapes Amazon/Flipkart/Ajio, saves vectors, returns feedback + products. |
-| `POST` | `/product-search/text` | `application/json` (`{ "query": "..." }`) | Triggers multi-platform scrape by text query, stores to pgvector, returns products. |
-| `POST` | `/chat` | `application/json` (`{ "message": "..." }`) | Conversational RAG chatbot compares prices and provides markdown links. |
+| `POST` | `/product-search/upload-image` | `multipart/form-data` (`file`) | Uploads image, analyzes with Gemini Vision, scrapes e-commerce, saves history if authenticated, returns products. |
+| `POST` | `/product-search/text` | `application/json` (`{ "query": "..." }`) | Triggers multi-platform scrape by text query, stores to pgvector, saves history if authenticated, returns products. |
+| `GET` | `/product-search/history` | Bearer JWT | Protected route: retrieves logged-in user's past product searches with pagination. |
+| `GET` | `/product-search/history/:id` | Bearer JWT | Protected route: retrieves single search details by UUID. |
+| `DELETE` | `/product-search/history` | Bearer JWT | Protected route: clears logged-in user's search history. |
+| `POST` | `/chat` | `application/json` (`{ "message": "...", "sessionId"?: "..." }`) | Conversational RAG chatbot compares prices; saves message & response to user history if authenticated. |
+| `GET` | `/chat/history` | Bearer JWT | Protected route: retrieves logged-in user's past chat history. |
+| `DELETE` | `/chat/history` | Bearer JWT | Protected route: clears logged-in user's chat history. |
 | `GET` | `/product` | Query params (`?limit=20&offset=0`) | Lists stored products with pagination. |
 | `GET` | `/product/search` | Query params (`?q=...&limit=6`) | Semantic vector similarity search against stored catalog. |
 | `GET` | `/product/:id` | Route param (`:id`) | Retrieves single product details by UUID. |

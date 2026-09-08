@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { ScraperService } from '../scraper/scraper.service';
 import { ProductService } from '../product/product.service';
 import { VisionService } from '../ai/vision/vision.service';
+import { ProductSearch } from './entities/product-search.entity';
 
 @Injectable()
 export class ProductSearchService {
@@ -11,9 +14,11 @@ export class ProductSearchService {
     private scraperService: ScraperService,
     private productService: ProductService,
     private visionService: VisionService,
+    @InjectRepository(ProductSearch)
+    private productSearchRepo: Repository<ProductSearch>,
   ) {}
 
-  async processImageSearch(file: Express.Multer.File) {
+  async processImageSearch(file: Express.Multer.File, userId?: string) {
     // 1. Send image to Gemini Vision model to detect product details & optimal query
     const analysis = await this.visionService.analyzeProductImage(file);
 
@@ -40,9 +45,42 @@ export class ProductSearchService {
         );
     }
 
-    // 4. Return dynamic user feedback and scraped product comparison immediately
+    // 4. Save search history if user is authenticated
+    let savedSearchId: string | undefined;
+    if (userId) {
+      try {
+        const searchRecord: ProductSearch = this.productSearchRepo.create({
+          userId,
+          searchType: 'image',
+          query: analysis.searchQuery,
+          userFeedback: analysis.userFeedback,
+          analysis: {
+            productName: analysis.productName,
+            brand: analysis.brand,
+            category: analysis.category,
+            color: analysis.color,
+            searchQuery: analysis.searchQuery,
+          },
+          totalFound: scrapedProducts.length,
+          results: scrapedProducts,
+        });
+        const saved: ProductSearch =
+          await this.productSearchRepo.save(searchRecord);
+        savedSearchId = saved.id;
+        this.logger.log(
+          `Saved image search history ${saved.id} for user ${userId}`,
+        );
+      } catch (err: any) {
+        this.logger.error(
+          `Failed to save image search history: ${err?.message || err}`,
+        );
+      }
+    }
+
+    // 5. Return dynamic user feedback and scraped product comparison immediately
     return {
       success: true,
+      searchId: savedSearchId,
       userFeedback: analysis.userFeedback,
       analysis: {
         productName: analysis.productName,
@@ -56,7 +94,7 @@ export class ProductSearchService {
     };
   }
 
-  async processTextSearch(query: string) {
+  async processTextSearch(query: string, userId?: string) {
     this.logger.log(
       `Initiating multi-platform scrape for text query: "${query}"`,
     );
@@ -77,11 +115,71 @@ export class ProductSearchService {
         );
     }
 
+    // Save search history if user is authenticated
+    let savedSearchId: string | undefined;
+    if (userId) {
+      try {
+        const searchRecord: ProductSearch = this.productSearchRepo.create({
+          userId,
+          searchType: 'text',
+          query,
+          userFeedback: null,
+          analysis: null,
+          totalFound: scrapedProducts.length,
+          results: scrapedProducts,
+        });
+        const saved: ProductSearch =
+          await this.productSearchRepo.save(searchRecord);
+        savedSearchId = saved.id;
+        this.logger.log(
+          `Saved text search history ${saved.id} for user ${userId}`,
+        );
+      } catch (err: any) {
+        this.logger.error(
+          `Failed to save text search history: ${err?.message || err}`,
+        );
+      }
+    }
+
     return {
       success: true,
+      searchId: savedSearchId,
       query,
       totalFound: scrapedProducts.length,
       products: scrapedProducts,
+    };
+  }
+
+  async getUserSearchHistory(
+    userId: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<{ total: number; searches: ProductSearch[] }> {
+    const [searches, total] = await this.productSearchRepo.findAndCount({
+      where: { userId },
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+    return { total, searches };
+  }
+
+  async getUserSearchById(
+    id: string,
+    userId: string,
+  ): Promise<ProductSearch | null> {
+    return await this.productSearchRepo.findOne({
+      where: { id, userId },
+    });
+  }
+
+  async clearUserSearchHistory(
+    userId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.productSearchRepo.delete({ userId });
+    return {
+      success: true,
+      message: `Search history cleared for user ${userId}`,
     };
   }
 }
