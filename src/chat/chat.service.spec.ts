@@ -6,18 +6,20 @@ import { RagService } from '../ai/rag/rag.service';
 
 describe('ChatService', () => {
   let service: ChatService;
-  let ragService: RagService;
+  let mockAnswerShoppingQuery: jest.Mock;
 
   beforeEach(async () => {
+    mockAnswerShoppingQuery = jest
+      .fn()
+      .mockResolvedValue('Cheapest option is on Amazon at ₹2,499');
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ChatService,
         {
           provide: RagService,
           useValue: {
-            answerShoppingQuery: jest
-              .fn()
-              .mockResolvedValue('Cheapest option is on Amazon at ₹2,499'),
+            answerShoppingQuery: mockAnswerShoppingQuery,
           },
         },
         {
@@ -39,7 +41,6 @@ describe('ChatService', () => {
     }).compile();
 
     service = module.get<ChatService>(ChatService);
-    ragService = module.get<RagService>(RagService);
   });
 
   it('should be defined', () => {
@@ -52,7 +53,7 @@ describe('ChatService', () => {
       'user-uuid-1',
       'sess-1',
     );
-    expect(ragService.answerShoppingQuery).toHaveBeenCalledWith(
+    expect(mockAnswerShoppingQuery).toHaveBeenCalledWith(
       'Nike Air Jordan best price?',
     );
     expect(result.success).toBe(true);

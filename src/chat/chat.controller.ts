@@ -27,7 +27,11 @@ export class ChatController {
     @Body() body: ChatQueryDto,
     @CurrentUser() user?: UserPayload,
   ) {
-    return this.chatService.sendMessage(body.message, user?.sub, body.sessionId);
+    return this.chatService.sendMessage(
+      body.message,
+      user?.sub,
+      body.sessionId,
+    );
   }
 
   // ==========================================
@@ -41,11 +45,7 @@ export class ChatController {
     @Query('limit') limit = 50,
     @Query('sessionId') sessionId?: string,
   ) {
-    return this.chatService.getUserChatHistory(
-      user.sub,
-      +limit,
-      sessionId,
-    );
+    return this.chatService.getUserChatHistory(user.sub, +limit, sessionId);
   }
 
   @UseGuards(AuthGuard)

@@ -5,33 +5,39 @@ import { ChatService } from './chat.service';
 
 describe('ChatController', () => {
   let controller: ChatController;
-  let chatService: ChatService;
+  let mockSendMessage: jest.Mock;
+  let mockGetUserChatHistory: jest.Mock;
+  let mockClearUserChatHistory: jest.Mock;
 
   beforeEach(async () => {
+    mockSendMessage = jest.fn().mockResolvedValue({
+      success: true,
+      answer: 'Test Answer',
+    });
+    mockGetUserChatHistory = jest.fn().mockResolvedValue({
+      total: 1,
+      messages: [
+        {
+          id: 'msg-1',
+          message: 'Hello',
+          response: 'Hi',
+        },
+      ],
+    });
+    mockClearUserChatHistory = jest.fn().mockResolvedValue({
+      success: true,
+      message: 'Chat history cleared',
+    });
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ChatController],
       providers: [
         {
           provide: ChatService,
           useValue: {
-            sendMessage: jest.fn().mockResolvedValue({
-              success: true,
-              answer: 'Test Answer',
-            }),
-            getUserChatHistory: jest.fn().mockResolvedValue({
-              total: 1,
-              messages: [
-                {
-                  id: 'msg-1',
-                  message: 'Hello',
-                  response: 'Hi',
-                },
-              ],
-            }),
-            clearUserChatHistory: jest.fn().mockResolvedValue({
-              success: true,
-              message: 'Chat history cleared',
-            }),
+            sendMessage: mockSendMessage,
+            getUserChatHistory: mockGetUserChatHistory,
+            clearUserChatHistory: mockClearUserChatHistory,
           },
         },
         {
@@ -44,7 +50,6 @@ describe('ChatController', () => {
     }).compile();
 
     controller = module.get<ChatController>(ChatController);
-    chatService = module.get<ChatService>(ChatService);
   });
 
   it('should be defined', () => {
@@ -56,7 +61,7 @@ describe('ChatController', () => {
       { message: 'Hello' },
       { sub: 'user-uuid-1', email: 'test@example.com' },
     );
-    expect(chatService.sendMessage).toHaveBeenCalledWith(
+    expect(mockSendMessage).toHaveBeenCalledWith(
       'Hello',
       'user-uuid-1',
       undefined,
@@ -69,7 +74,7 @@ describe('ChatController', () => {
       { sub: 'user-uuid-1', email: 'test@example.com' },
       50,
     );
-    expect(chatService.getUserChatHistory).toHaveBeenCalledWith(
+    expect(mockGetUserChatHistory).toHaveBeenCalledWith(
       'user-uuid-1',
       50,
       undefined,
@@ -82,7 +87,7 @@ describe('ChatController', () => {
       { sub: 'user-uuid-1', email: 'test@example.com' },
       undefined,
     );
-    expect(chatService.clearUserChatHistory).toHaveBeenCalledWith(
+    expect(mockClearUserChatHistory).toHaveBeenCalledWith(
       'user-uuid-1',
       undefined,
     );

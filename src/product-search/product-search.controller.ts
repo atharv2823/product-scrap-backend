@@ -78,11 +78,7 @@ export class ProductSearchController {
     @Query('limit') limit = 20,
     @Query('offset') offset = 0,
   ) {
-    return this.searchService.getUserSearchHistory(
-      user.sub,
-      +limit,
-      +offset,
-    );
+    return this.searchService.getUserSearchHistory(user.sub, +limit, +offset);
   }
 
   @UseGuards(AuthGuard)
