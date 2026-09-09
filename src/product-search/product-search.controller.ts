@@ -16,7 +16,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ProductSearchService } from './product-search.service';
 import { AuthGuard } from '../guards/auth/auth.guard';
-import { OptionalAuthGuard } from '../guards/auth/optional-auth.guard';
 import { CurrentUser } from '../guards/auth/current-user.decorator';
 import type { UserPayload } from '../guards/auth/current-user.decorator';
 
@@ -25,7 +24,7 @@ export class ProductSearchController {
   constructor(private readonly searchService: ProductSearchService) {}
 
   @Post('upload-image')
-  @UseGuards(OptionalAuthGuard)
+  @UseGuards(AuthGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
@@ -51,20 +50,20 @@ export class ProductSearchController {
   )
   async uploadAndSearch(
     @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() user?: UserPayload,
+    @CurrentUser() user: UserPayload,
   ) {
     if (!file) throw new BadRequestException('Image file is required');
-    return this.searchService.processImageSearch(file, user?.sub);
+    return this.searchService.processImageSearch(file, user.sub);
   }
 
   @Post('text')
-  @UseGuards(OptionalAuthGuard)
+  @UseGuards(AuthGuard)
   async searchByText(
     @Body('query') query: string,
-    @CurrentUser() user?: UserPayload,
+    @CurrentUser() user: UserPayload,
   ) {
     if (!query) throw new BadRequestException('Query string is required');
-    return this.searchService.processTextSearch(query, user?.sub);
+    return this.searchService.processTextSearch(query, user.sub);
   }
 
   // ==========================================

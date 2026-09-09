@@ -51,7 +51,7 @@ export class ChatService {
     return {
       success: true,
       id: savedMessageId,
-      sessionId: sessionId || null,
+      // sessionId: sessionId || null,
       message,
       answer,
     };

@@ -12,7 +12,6 @@ import {
 import { ChatService } from './chat.service';
 import { ChatQueryDto } from './dto/chat-query.dto';
 import { AuthGuard } from '../guards/auth/auth.guard';
-import { OptionalAuthGuard } from '../guards/auth/optional-auth.guard';
 import { CurrentUser } from '../guards/auth/current-user.decorator';
 import type { UserPayload } from '../guards/auth/current-user.decorator';
 
@@ -21,17 +20,13 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Post()
-  @UseGuards(OptionalAuthGuard)
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   async askShoppingAssistant(
     @Body() body: ChatQueryDto,
-    @CurrentUser() user?: UserPayload,
+    @CurrentUser() user: UserPayload,
   ) {
-    return this.chatService.sendMessage(
-      body.message,
-      user?.sub,
-      body.sessionId,
-    );
+    return this.chatService.sendMessage(body.message, user.sub, body.sessionId);
   }
 
   // ==========================================
