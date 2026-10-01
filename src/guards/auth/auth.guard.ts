@@ -30,10 +30,13 @@ export class AuthGuard implements CanActivate {
   }
 
   private extractToken(request: Request): string | undefined {
-    // 1. Authorization: Bearer <token>
-    const [type, bearerToken] = request.headers.authorization?.split(' ') ?? [];
-    if (type === 'Bearer' && bearerToken) {
-      return bearerToken;
+    // 1. Authorization: Bearer <token> (handles multiple spaces and case-insensitive 'Bearer')
+    const authHeader = request.headers.authorization;
+    if (authHeader) {
+      const match = authHeader.match(/^Bearer\s+(.+)$/i);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
     }
 
     // 2. Custom header: x-access-token or access_token
