@@ -16,6 +16,7 @@ describe('ProductSearchController', () => {
             processImageSearch: jest.fn(),
             processTextSearch: jest.fn(),
             getUserSearchHistory: jest.fn(),
+            getUserSearchSummaries: jest.fn(),
             getUserSearchById: jest.fn(),
             clearUserSearchHistory: jest.fn(),
           },

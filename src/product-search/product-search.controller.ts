@@ -71,10 +71,40 @@ export class ProductSearchController {
   // ==========================================
 
   @UseGuards(AuthGuard)
+  @Get('user')
+  async getSearchesByUserId(
+    @CurrentUser() user: UserPayload,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const take = limit ? Math.min(10, Math.max(1, +limit)) : 10;
+    const pageNum = page ? Math.max(1, +page) : 1;
+    const offsetNum = offset !== undefined ? Math.max(0, +offset) : undefined;
+    return this.searchService.getUserSearchSummaries(user.sub, take, pageNum, offsetNum);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('user/:userId')
+  async getSearchesByExplicitUserId(
+    @Param('userId') paramUserId: string,
+    @CurrentUser() user: UserPayload,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    const targetUserId = paramUserId || user.sub;
+    const take = limit ? Math.min(10, Math.max(1, +limit)) : 10;
+    const pageNum = page ? Math.max(1, +page) : 1;
+    const offsetNum = offset !== undefined ? Math.max(0, +offset) : undefined;
+    return this.searchService.getUserSearchSummaries(targetUserId, take, pageNum, offsetNum);
+  }
+
+  @UseGuards(AuthGuard)
   @Get('history')
   async getSearchHistory(
     @CurrentUser() user: UserPayload,
-    @Query('limit') limit = 20,
+    @Query('limit') limit = 10,
     @Query('offset') offset = 0,
   ) {
     return this.searchService.getUserSearchHistory(user.sub, +limit, +offset);

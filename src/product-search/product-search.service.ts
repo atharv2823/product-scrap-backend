@@ -150,9 +150,71 @@ export class ProductSearchService {
     };
   }
 
+  async getUserSearchSummaries(
+    userId: string,
+    limit = 10,
+    page = 1,
+    offset?: number,
+  ): Promise<{
+    pagination: {
+      count: number;
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+      total?: number;
+    };
+    searches: Array<{
+      id: string;
+      userId: string;
+      searchType: string;
+      query: string;
+      createdAt: Date;
+    }>;
+  }> {
+    const take = limit > 0 ? limit : 10;
+    const currentPage =
+      page && page > 0 ? page : offset !== undefined ? Math.floor(offset / take) + 1 : 1;
+    const skip = offset !== undefined ? offset : (currentPage - 1) * take;
+
+    const [searches, total] = await this.productSearchRepo.findAndCount({
+      where: { userId },
+      select: {
+        id: true,
+        userId: true,
+        searchType: true,
+        query: true,
+        createdAt: true,
+      },
+      order: { createdAt: 'DESC' },
+      take,
+      skip,
+    });
+
+    const totalPages = Math.ceil(total / take) || 1;
+
+    const sanitized = searches.map((s) => ({
+      id: s.id,
+      userId: s.userId || userId,
+      searchType: s.searchType,
+      query: s.query,
+      createdAt: s.createdAt,
+    }));
+
+    return {
+      searches: sanitized,
+      pagination: {
+        count: sanitized.length,
+        page: currentPage,
+        limit: take,
+        totalPages,
+        total,
+      },
+    };
+  }
+
   async getUserSearchHistory(
     userId: string,
-    limit = 20,
+    limit = 10,
     offset = 0,
   ): Promise<{ total: number; searches: ProductSearch[] }> {
     const [searches, total] = await this.productSearchRepo.findAndCount({

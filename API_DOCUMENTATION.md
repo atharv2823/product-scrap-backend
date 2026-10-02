@@ -11,6 +11,7 @@
 - [1. Visual Search & Multi-Platform Scraping (`/product-search`)](#1-visual-search--multi-platform-scraping-product-search)
   - [`POST /product-search/upload-image`](#post-product-searchupload-image)
   - [`POST /product-search/text`](#post-product-searchtext)
+  - [`GET /product-search/user`](#get-product-searchuser-protected)
   - [`GET /product-search/history`](#get-product-searchhistory-protected)
   - [`GET /product-search/history/:id`](#get-product-searchhistoryid-protected)
   - [`DELETE /product-search/history`](#delete-product-searchhistory-protected)
@@ -149,6 +150,44 @@ curl --location 'http://localhost:3000/product-search/text' \
       "rating": "4.60",
       "productUrl": "https://www.amazon.in/...",
       "imageUrl": "https://m.media-amazon.com/..."
+    }
+  ]
+}
+```
+
+---
+
+### `GET /product-search/user` (Protected)
+Retrieves the logged-in user's past product searches in chunks of 10 entries. Extracts the `userId` directly from the `access_token` and strips heavy payloads (omits `results`, `analysis`, and `userFeedback`).
+
+- **Headers**: `Authorization: Bearer <JWT_TOKEN>` (or `x-access-token: <JWT_TOKEN>`)
+- **Query Parameters**:
+  - `page` *(optional, default: 1)*: 1-indexed page number (e.g. `1`, `2`).
+  - `limit` *(optional, default: 10)*: Number of records per chunk.
+  - `offset` *(optional, default: 0)*: Zero-based record offset.
+
+#### Sample Curl Command
+```bash
+curl --location 'http://localhost:5000/product-search/user?page=1&limit=10' \
+--header 'Authorization: Bearer <YOUR_ACCESS_TOKEN>'
+```
+
+#### Success Response (`200 OK`)
+```json
+{
+  "pagination": {
+    "count": 10,
+    "page count": 1,
+    "total page count": 2,
+    "total count": 13
+  },
+  "searches": [
+    {
+      "id": "22df5c63-e4ef-4772-b777-15541ba5c90f",
+      "userId": "edabee63-68d1-43f5-b13a-1bab723291fb",
+      "searchType": "image",
+      "query": "Casio Green Dial Stainless Steel Watch",
+      "createdAt": "2026-10-02T05:50:46.170Z"
     }
   ]
 }
