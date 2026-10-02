@@ -60,7 +60,7 @@ ${content.slice(0, 20000)}
       const combinedSnippet = platformPages
         .map(
           (p) =>
-            `\n=== SOURCE: ${p.platform.toUpperCase()} ===\n${p.content.slice(0, 10000)}`,
+            `\n=== SOURCE: ${p.platform.toUpperCase()} ===\n${p.content.slice(0, 5000)}`,
         )
         .join('\n\n');
 

@@ -103,16 +103,16 @@ export class ProductSearchService {
 
     // Background sync to pgvector
     if (scrapedProducts.length > 0) {
-      this.productService
-        .saveScrapedProducts(scrapedProducts)
-        .then((saved) =>
-          this.logger.log(
-            `Background sync complete: saved ${saved.length} products to pgvector`,
-          ),
-        )
-        .catch((err) =>
-          this.logger.error(`Background pgvector sync failed: ${err.message}`),
-        );
+      setTimeout(() => {
+        this.productService
+          .saveScrapedProducts(scrapedProducts)
+          .then((saved) =>
+            this.logger.log(`Background sync complete: saved ${saved.length} products to pgvector`),
+          )
+          .catch((err) =>
+            this.logger.error(`Background pgvector sync failed: ${err.message}`),
+          );
+      }, 2500); // 2.5s delay avoids hitting Gemini's RPM burst limit
     }
 
     // Save search history if user is authenticated
